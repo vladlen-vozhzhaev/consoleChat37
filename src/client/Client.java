@@ -1,5 +1,7 @@
 package client;
 
+import org.json.simple.JSONObject;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -26,9 +28,12 @@ public class Client {
                 }
             });
             thread.start();
+            // {msg: "hello"}
+            JSONObject jsonObject = new JSONObject();
             while (true){
                 message = scanner.nextLine();
-                out.writeUTF(message);
+                jsonObject.put("msg", message);
+                out.writeUTF(jsonObject.toJSONString());
             }
 
         } catch (IOException e) {

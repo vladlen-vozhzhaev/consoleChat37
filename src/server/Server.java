@@ -1,5 +1,10 @@
 package server;
 
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -25,18 +30,36 @@ public class Server {
                     public void run() {
                         try {
                             user.getOut().writeUTF("Введите имя: ");
-                            String name = user.getIn().readUTF();
+                            JSONParser jsonParser = new JSONParser();
+                            JSONObject jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
+                            String name = jsonObject.get("msg").toString();
+                            boolean uniqueName = false;
+                            while (!uniqueName){ // до тех пор пока имя не уникальное
+                                uniqueName = true; // наверное имя уникально
+                                for (User user1 : users) { // но мы проверим
+                                    if(user1.getName().equals(name)){ // если нашли такое же имя, то
+                                        user.getOut().writeUTF("Имя занято, выберите другое");
+                                        jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
+                                        name = jsonObject.get("msg").toString();
+                                        uniqueName = false; // имя было не уникально, нужно проверить ещё раз
+                                        break;
+                                    }
+                                }
+                            }
+
                             user.setName(name);
                             user.getOut().writeUTF(user.getName()+" добро пожаловать на сервер!");
                             String clientMessage;
                             while (true){
-                                clientMessage = user.getIn().readUTF();
+                                jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
+                                clientMessage = jsonObject.get("msg").toString();
                                 System.out.println(clientMessage);
                                 for (User user1 : users) {
+                                    if (name.equals(user1.getName())) continue;
                                     user1.getOut().writeUTF(user.getName()+": "+clientMessage);
                                 }
                             }
-                        }catch (IOException e){
+                        }catch (Exception e){
                             System.out.println("Клиент отключился");
                             users.remove(user);
                         }
