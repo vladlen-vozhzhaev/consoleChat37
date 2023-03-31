@@ -31,8 +31,19 @@ public class Client {
             // {msg: "hello"}
             JSONObject jsonObject = new JSONObject();
             while (true){
+                //    /m Ivan Hello Ivan! How are you!
                 message = scanner.nextLine();
-                jsonObject.put("msg", message);
+                if(message.indexOf("/m") == 0){
+                    String[] words = message.split(" ");
+                    int skipStr = 3+words[1].length();
+                    String msg = message.substring(skipStr);
+                    jsonObject.put("public", false);
+                    jsonObject.put("name", words[1]);
+                    jsonObject.put("msg", msg);
+                }else {
+                    jsonObject.put("public", true);
+                    jsonObject.put("msg", message);
+                }
                 out.writeUTF(jsonObject.toJSONString());
             }
 
