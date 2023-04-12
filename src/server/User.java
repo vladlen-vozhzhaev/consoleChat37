@@ -1,9 +1,14 @@
 package server;
 
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.*;
 
 public class User {
     private String name;
@@ -32,4 +37,54 @@ public class User {
     public DataOutputStream getOut() {
         return out;
     }
+    public boolean reg(String db_url, String db_login, String db_pass) throws SQLException, IOException, ParseException {
+        Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
+        Statement statement = connection.createStatement();
+        JSONObject jsonObject = new JSONObject();
+        JSONParser jsonParser = new JSONParser();
+        jsonObject.put("msg", "Введите имя: ");
+        this.getOut().writeUTF(jsonObject.toJSONString());
+        jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
+        String name = jsonObject.get("msg").toString();
+        jsonObject.put("msg", "Введите email: ");
+        this.getOut().writeUTF(jsonObject.toJSONString());
+        jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
+        String login = jsonObject.get("msg").toString();
+        jsonObject.put("msg", "Введите pass: ");
+        this.getOut().writeUTF(jsonObject.toJSONString());
+        jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
+        String pass = jsonObject.get("msg").toString();
+        statement.executeUpdate("INSERT INTO `users` (`name`, `login`, `pass`) " +
+                "VALUES ('"+name+"', '"+login+"', '"+pass+"')");
+        statement.close();
+        return true;
+    }
+    public boolean login(String db_url, String db_login, String db_pass) throws SQLException, IOException, ParseException{
+        Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
+        Statement statement = connection.createStatement();
+        JSONObject jsonObject = new JSONObject();
+        JSONParser jsonParser = new JSONParser();
+        jsonObject.put("msg", "Введите логин: ");
+        this.getOut().writeUTF(jsonObject.toJSONString());
+        jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
+        String login = jsonObject.get("msg").toString();
+        jsonObject.put("msg", "Введите пароль: ");
+        this.getOut().writeUTF(jsonObject.toJSONString());
+        jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
+        String pass = jsonObject.get("msg").toString();
+        ResultSet resultSet = statement.executeQuery(
+                "SELECT * FROM users WHERE login='"+login+"' AND pass='"+pass+"'"
+        );
+        if(resultSet.next()){
+            String name = resultSet.getString("name");
+            this.setName(name);
+            return true;
+        }else{
+            jsonObject.put("msg", "Неверный логин или пароль");
+            this.getOut().writeUTF(jsonObject.toJSONString());
+            return false;
+        }
+
+    }
+
 }
