@@ -54,10 +54,17 @@ public class User {
         this.getOut().writeUTF(jsonObject.toJSONString());
         jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
         String pass = jsonObject.get("msg").toString();
-        statement.executeUpdate("INSERT INTO `users` (`name`, `login`, `pass`) " +
-                "VALUES ('"+name+"', '"+login+"', '"+pass+"')");
-        statement.close();
-        return true;
+        ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE login = '"+login+"'");
+        if(resultSet.next()){
+            jsonObject.put("msg", "Такой пользователь уже есть");
+            this.getOut().writeUTF(jsonObject.toJSONString());
+            return false;
+        }else{
+            statement.executeUpdate("INSERT INTO `users` (`name`, `login`, `pass`) " +
+                    "VALUES ('"+name+"', '"+login+"', '"+pass+"')");
+            statement.close();
+            return true;
+        }
     }
     public boolean login(String db_url, String db_login, String db_pass) throws SQLException, IOException, ParseException{
         Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
@@ -74,7 +81,7 @@ public class User {
         String pass = jsonObject.get("msg").toString();
         ResultSet resultSet = statement.executeQuery(
                 "SELECT * FROM users WHERE login='"+login+"' AND pass='"+pass+"'"
-        );
+        ); //     ivan@mail.ru'/*
         if(resultSet.next()){
             String name = resultSet.getString("name");
             this.setName(name);

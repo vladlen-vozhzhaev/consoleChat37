@@ -44,37 +44,22 @@ public class Server {
                                 jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
                                 String command = jsonObject.get("msg").toString();
                                 if(command.equals("/reg")){
-                                    user.reg(db_url, db_login, db_pass);
-                                    break;
+                                    if(user.reg(db_url, db_login, db_pass)) break;
                                 }else if(command.equals("/login")){
                                     if(user.login(db_url, db_login, db_pass)) break;
                                 }
                             }
-                            /*jsonObject.put("msg", "Введите имя: ");
-                            user.getOut().writeUTF(jsonObject.toJSONString());
-
-                            jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
-                            String name = jsonObject.get("msg").toString();
-                            boolean uniqueName = false;
-                            while (!uniqueName){ // до тех пор пока имя не уникальное
-                                uniqueName = true; // наверное имя уникально
-                                for (User user1 : users) { // но мы проверим
-                                    if(name.equals(user1.getName())){ // если нашли такое же имя, то
-                                        user.getOut().writeUTF("Имя занято, выберите другое");
-                                        jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
-                                        name = jsonObject.get("msg").toString();
-                                        uniqueName = false; // имя было не уникально, нужно проверить ещё раз
-                                        break;
-                                    }
-                                }
-                            }
-                            user.setName(name);
-                            */
-
 
                             sendUserList(users);
                             jsonObject.put("msg", user.getName()+" добро пожаловать на сервер!");
                             user.getOut().writeUTF(jsonObject.toJSONString());
+
+                            ArrayList<Message> messages = Message.readPublicMessages(db_url, db_login, db_pass);
+                            for (Message message : messages) {
+                                jsonObject.put("msg", message.getMsg());
+                                user.getOut().writeUTF(jsonObject.toJSONString());
+                            }
+
                             String clientMessage;
                             while (true){
                                 jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
