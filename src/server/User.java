@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.sql.*;
 
 public class User {
+    private int id;
     private String name;
     private Socket socket;
     private DataInputStream in;
@@ -37,6 +38,15 @@ public class User {
     public DataOutputStream getOut() {
         return out;
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public boolean reg(String db_url, String db_login, String db_pass) throws SQLException, IOException, ParseException {
         Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
         Statement statement = connection.createStatement();
@@ -84,7 +94,9 @@ public class User {
         ); //     ivan@mail.ru'/*
         if(resultSet.next()){
             String name = resultSet.getString("name");
+            int id = resultSet.getInt("id");
             this.setName(name);
+            this.setId(id);
             return true;
         }else{
             jsonObject.put("msg", "Неверный логин или пароль");

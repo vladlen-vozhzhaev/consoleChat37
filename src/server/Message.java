@@ -28,11 +28,14 @@ public class Message {
 
     public void saveMessage(String db_url, String db_login, String db_pass) throws SQLException {
         Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
-        Statement statement = connection.createStatement();
-        statement.executeUpdate(
-                "INSERT INTO messages (msg, to_user, from_user) VALUES (?,?,?)",
-                new String[]{this.msg, String.valueOf(this.to_user), String.valueOf(this.from_user)});
-        statement.close();
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT INTO messages (msg, to_user, from_user) VALUES (?,?,?)"
+        );
+        preparedStatement.setString(1, this.msg);
+        preparedStatement.setInt(2, this.to_user);
+        preparedStatement.setInt(3, this.from_user);
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
     }
     public static ArrayList<Message> readPublicMessages(String db_url, String db_login, String db_pass) throws SQLException{
         Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);

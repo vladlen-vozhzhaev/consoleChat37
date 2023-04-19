@@ -35,10 +35,10 @@ public class Client {
                 message = scanner.nextLine();
                 if(message.indexOf("/m") == 0){
                     String[] words = message.split(" ");
-                    int skipStr = 3+words[1].length();
-                    String msg = message.substring(skipStr);
+                    int skipStr = 3+words[1].length(); // "/m " - 3 символа
+                    String msg = message.substring(skipStr); // отрезаем сообщение
                     jsonObject.put("public", false);
-                    jsonObject.put("name", words[1]);
+                    jsonObject.put("id", words[1]);
                     jsonObject.put("msg", msg);
                 }else {
                     jsonObject.put("public", true);
