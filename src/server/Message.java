@@ -55,4 +55,22 @@ public class Message {
         statement.close();
         return messages;
     }
-}
+
+    public static ArrayList<Message> readPrivateMessages(String db_url, String db_login, String db_pass, int fromUser, int toUser) throws SQLException {
+        Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
+        Statement statement = connection.createStatement();
+        ResultSet resultSet = statement.executeQuery(
+                "SELECT * FROM `messages`, `users` WHERE users.id = messages.from_user AND (from_user='"+fromUser+"' AND to_user='"+toUser+"' OR from_user='"+toUser+"' AND to_user='"+fromUser+"')"
+        );
+        ArrayList<Message> messages = new ArrayList<>();
+        while (resultSet.next()){
+            String msg = resultSet.getString("msg");
+            String name = resultSet.getString("name");
+            fromUser = resultSet.getInt("from_user");
+            int to_user = resultSet.getInt("to_user");
+            Message message = new Message(name+": "+msg, fromUser, to_user);
+            messages.add(message);
+        }
+        statement.close();
+        return messages;
+    }}

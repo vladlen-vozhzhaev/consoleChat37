@@ -52,6 +52,7 @@ public class Server {
                             users.add(user);
                             sendUserList(users);
                             jsonObject.put("msg", user.getName()+" добро пожаловать на сервер!");
+                            jsonObject.put("self_id", user.getId());
                             user.getOut().writeUTF(jsonObject.toJSONString());
                             ArrayList<Message> messages = Message.readPublicMessages(db_url, db_login, db_pass);
 
@@ -64,30 +65,43 @@ public class Server {
                             String clientMessage;
                             while (true){
                                 jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
-                                clientMessage = jsonObject.get("msg").toString();
-                                System.out.println(clientMessage);
-                                if((boolean) jsonObject.get("public")) {
-                                    Message message = new Message(clientMessage, user.getId(), 0);
-                                    message.saveMessage(db_url, db_login, db_pass);
-                                    for (User user1 : users) {
-                                        if (user.getName().equals(user1.getName())) continue;
-                                        jsonObject.remove("msg");
-                                        jsonObject.put("msg", user.getName() + ": " + clientMessage);
-                                        user1.getOut().writeUTF(jsonObject.toJSONString());
+                                String action = "";
+                                if(jsonObject.get("action") != null)  action = (String) jsonObject.get("action");
+                                if(action.equals("getMessages")){
+                                    int fromUser = user.getId();
+                                    int toUser = Integer.parseInt(jsonObject.get("toUser").toString());
+                                    messages = Message.readPrivateMessages(db_url, db_login, db_pass, fromUser, toUser);
+                                    for (Message message : messages) {
+                                        jsonObject.put("msg", message.getMsg());
+                                        user.getOut().writeUTF(jsonObject.toJSONString());
                                     }
                                 }else{
-                                    // Получаем имя получателя
-                                    int toUser = (Integer.parseInt(jsonObject.get("id").toString()));
-                                    Message message = new Message(clientMessage, user.getId(), toUser);
-                                    message.saveMessage(db_url, db_login, db_pass);
-                                    for (User user1 : users){ // Перебираем всех, чтобы найти нужного
-                                        if(user1.getId() == toUser){
+                                    clientMessage = jsonObject.get("msg").toString();
+                                    System.out.println(clientMessage);
+                                    if((boolean) jsonObject.get("public")) {
+                                        Message message = new Message(clientMessage, user.getId(), 0);
+                                        message.saveMessage(db_url, db_login, db_pass);
+                                        for (User user1 : users) {
+                                            if (user.getName().equals(user1.getName())) continue;
+                                            jsonObject.remove("msg");
                                             jsonObject.put("msg", user.getName() + ": " + clientMessage);
                                             user1.getOut().writeUTF(jsonObject.toJSONString());
-                                            break;
+                                        }
+                                    }else{
+                                        // Получаем имя получателя
+                                        int toUser = (Integer.parseInt(jsonObject.get("id").toString()));
+                                        Message message = new Message(clientMessage, user.getId(), toUser);
+                                        message.saveMessage(db_url, db_login, db_pass);
+                                        for (User user1 : users){ // Перебираем всех, чтобы найти нужного
+                                            if(user1.getId() == toUser){
+                                                jsonObject.put("msg", user.getName() + ": " + clientMessage);
+                                                user1.getOut().writeUTF(jsonObject.toJSONString());
+                                                break;
+                                            }
                                         }
                                     }
                                 }
+
                             }
                         }catch (IOException e){
                             System.out.println("Клиент отключился");
