@@ -75,7 +75,9 @@ public class Server {
                                         jsonObject.put("msg", message.getMsg());
                                         user.getOut().writeUTF(jsonObject.toJSONString());
                                     }
-                                }else{
+                                } else if (action.equals("sendFile")) {
+                                    // Принимаем файл с клиента!
+                                } else{
                                     clientMessage = jsonObject.get("msg").toString();
                                     System.out.println(clientMessage);
                                     if((boolean) jsonObject.get("public")) {
