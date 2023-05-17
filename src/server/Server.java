@@ -6,9 +6,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.*;
@@ -40,6 +38,7 @@ public class Server {
                             while (true){
                                 jsonObject.put("msg", "Для регистрации /reg, \n" +
                                                         "для авторизации /login");
+                                jsonObject.put("type", 1);
                                 user.getOut().writeUTF(jsonObject.toJSONString());
                                 jsonObject = (JSONObject) jsonParser.parse(user.getIn().readUTF());
                                 String command = jsonObject.get("msg").toString();
@@ -53,13 +52,30 @@ public class Server {
                             sendUserList(users);
                             jsonObject.put("msg", user.getName()+" добро пожаловать на сервер!");
                             jsonObject.put("self_id", user.getId());
+                            jsonObject.put("type", 1);
                             user.getOut().writeUTF(jsonObject.toJSONString());
                             ArrayList<Message> messages = Message.readPublicMessages(db_url, db_login, db_pass);
 
 
                             for (Message message : messages) {
                                 jsonObject.put("msg", message.getMsg());
-                                user.getOut().writeUTF(jsonObject.toJSONString());
+                                jsonObject.put("type", message.getType());
+                                if(message.getType() == 1)
+                                    user.getOut().writeUTF(jsonObject.toJSONString());
+                                else if(message.getType() == 2){
+                                    File file = new File("files/"+message.getMsg());
+                                    long fileSize = file.length();
+                                    jsonObject.put("fileSize", fileSize);
+                                    user.getOut().writeUTF(jsonObject.toJSONString());
+                                    FileInputStream fis = new FileInputStream(file);
+                                    BufferedInputStream bis = new BufferedInputStream(fis);
+                                    byte[] buffer = new byte[1024];
+                                    int i;
+                                    while ((i = bis.read(buffer)) != -1){
+                                        user.getOut().write(buffer);
+                                    }
+                                    user.getOut().flush();
+                                }
                             }
 
                             String clientMessage;
@@ -77,11 +93,26 @@ public class Server {
                                     }
                                 } else if (action.equals("sendFile")) {
                                     // Принимаем файл с клиента!
+                                    String fileName = jsonObject.get("fileName").toString();
+                                    long fileSize = Long.parseLong(jsonObject.get("fileSize").toString());
+                                    FileOutputStream fos = new FileOutputStream("files/"+fileName, true);
+                                    System.out.println("Принимаем файл "+fileName);
+                                    byte[] buffer = new byte[1024];
+                                    while (true){
+                                        user.getIn().read(buffer);
+                                        for (byte b : buffer){
+                                            fos.write(b);
+                                        }
+                                        fileSize -= 1024;
+                                        if(fileSize <= 0) break;
+                                    }
+                                    Message message = new Message(fileName, user.getId(), 0, (byte) 2);
+                                    message.saveMessage(db_url, db_login, db_pass);
                                 } else{
                                     clientMessage = jsonObject.get("msg").toString();
                                     System.out.println(clientMessage);
                                     if((boolean) jsonObject.get("public")) {
-                                        Message message = new Message(clientMessage, user.getId(), 0);
+                                        Message message = new Message(clientMessage, user.getId(), 0, (byte) 1);
                                         message.saveMessage(db_url, db_login, db_pass);
                                         for (User user1 : users) {
                                             if (user.getName().equals(user1.getName())) continue;
@@ -92,7 +123,7 @@ public class Server {
                                     }else{
                                         // Получаем имя получателя
                                         int toUser = (Integer.parseInt(jsonObject.get("id").toString()));
-                                        Message message = new Message(clientMessage, user.getId(), toUser);
+                                        Message message = new Message(clientMessage, user.getId(), toUser, (byte) 1);
                                         message.saveMessage(db_url, db_login, db_pass);
                                         for (User user1 : users){ // Перебираем всех, чтобы найти нужного
                                             if(user1.getId() == toUser){

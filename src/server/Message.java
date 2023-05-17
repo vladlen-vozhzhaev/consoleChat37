@@ -7,11 +7,13 @@ public class Message {
     private String msg;
     private int from_user;
     private int to_user;
+    private byte type;
 
-    public Message(String msg, int from_user, int to_user) {
+    public Message(String msg, int from_user, int to_user, byte type) {
         this.msg = msg;
         this.from_user = from_user;
         this.to_user = to_user;
+        this.type = type;
     }
 
     public String getMsg() {
@@ -26,14 +28,19 @@ public class Message {
         return to_user;
     }
 
+    public byte getType() {
+        return type;
+    }
+
     public void saveMessage(String db_url, String db_login, String db_pass) throws SQLException {
         Connection connection = DriverManager.getConnection(db_url, db_login, db_pass);
         PreparedStatement preparedStatement = connection.prepareStatement(
-                "INSERT INTO messages (msg, to_user, from_user) VALUES (?,?,?)"
+                "INSERT INTO messages (msg, to_user, from_user, type) VALUES (?,?,?,?)"
         );
         preparedStatement.setString(1, this.msg);
         preparedStatement.setInt(2, this.to_user);
         preparedStatement.setInt(3, this.from_user);
+        preparedStatement.setByte(4, this.type);
         preparedStatement.executeUpdate();
         preparedStatement.close();
     }
@@ -48,8 +55,13 @@ public class Message {
             String msg = resultSet.getString("msg");
             String name = resultSet.getString("name");
             int fromUser = resultSet.getInt("from_user");
+            byte type = resultSet.getByte("type");
             int to_user = 0;
-            Message message = new Message(name+": "+msg, fromUser, to_user);
+            Message message;
+            if(type == 1)
+                message = new Message(name+": "+msg, fromUser, to_user, type);
+            else
+                message = new Message(msg, fromUser, to_user, type);
             messages.add(message);
         }
         statement.close();
@@ -68,7 +80,8 @@ public class Message {
             String name = resultSet.getString("name");
             fromUser = resultSet.getInt("from_user");
             int to_user = resultSet.getInt("to_user");
-            Message message = new Message(name+": "+msg, fromUser, to_user);
+            byte type = resultSet.getByte("type");
+            Message message = new Message(name+": "+msg, fromUser, to_user, type);
             messages.add(message);
         }
         statement.close();

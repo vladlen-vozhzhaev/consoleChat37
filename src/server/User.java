@@ -53,20 +53,24 @@ public class User {
         JSONObject jsonObject = new JSONObject();
         JSONParser jsonParser = new JSONParser();
         jsonObject.put("msg", "Введите имя: ");
+        jsonObject.put("type", 1);
         this.getOut().writeUTF(jsonObject.toJSONString());
         jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
         String name = jsonObject.get("msg").toString();
         jsonObject.put("msg", "Введите email: ");
+        jsonObject.put("type", 1);
         this.getOut().writeUTF(jsonObject.toJSONString());
         jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
         String login = jsonObject.get("msg").toString();
         jsonObject.put("msg", "Введите pass: ");
+        jsonObject.put("type", 1);
         this.getOut().writeUTF(jsonObject.toJSONString());
         jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
         String pass = jsonObject.get("msg").toString();
         ResultSet resultSet = statement.executeQuery("SELECT * FROM users WHERE login = '"+login+"'");
         if(resultSet.next()){
             jsonObject.put("msg", "Такой пользователь уже есть");
+            jsonObject.put("type", 1);
             this.getOut().writeUTF(jsonObject.toJSONString());
             return false;
         }else{
@@ -82,10 +86,12 @@ public class User {
         JSONObject jsonObject = new JSONObject();
         JSONParser jsonParser = new JSONParser();
         jsonObject.put("msg", "Введите логин: ");
+        jsonObject.put("type",1);
         this.getOut().writeUTF(jsonObject.toJSONString());
         jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
         String login = jsonObject.get("msg").toString();
         jsonObject.put("msg", "Введите пароль: ");
+        jsonObject.put("type", 1);
         this.getOut().writeUTF(jsonObject.toJSONString());
         jsonObject = (JSONObject) jsonParser.parse(this.getIn().readUTF());
         String pass = jsonObject.get("msg").toString();
@@ -100,6 +106,7 @@ public class User {
             return true;
         }else{
             jsonObject.put("msg", "Неверный логин или пароль");
+            jsonObject.put("type", 1);
             this.getOut().writeUTF(jsonObject.toJSONString());
             return false;
         }
